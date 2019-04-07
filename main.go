@@ -22,6 +22,7 @@ func main() {
 	app := cmds.NewApp()
 	app.Commands = []cli.Command{
 		cmds.NewServerCommand(server.Run),
+		cmds.NewBootstrapCommand(server.Bootstrap),
 		cmds.NewAgentCommand(agent.Run),
 		cmds.NewKubectlCommand(kubectl.Run),
 		cmds.NewCRICTL(crictl.Run),
