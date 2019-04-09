@@ -16,7 +16,7 @@ import (
 
 type Generic struct {
 	// revision must be first to ensure that this is properly aligned for atomic.LoadInt64
-	revision        int64
+	revision int64
 
 	db *sql.DB
 

@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/ibuildthecloud/kvsql/clientv3"
-	"github.com/ibuildthecloud/kvsql/storage"
+	etcd3 "github.com/ibuildthecloud/kvsql/storage"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/storage"
 	"k8s.io/apiserver/pkg/storage/storagebackend"
@@ -70,7 +70,7 @@ func newETCD3Client(c storagebackend.Config) (*clientv3.Client, error) {
 	}
 
 	if len(cfg.Endpoints) == 0 {
-		cfg.Endpoints = []string{"sqlite://"}
+		cfg.Endpoints = []string{"dqlite://"}
 	}
 
 	client, err := clientv3.New(cfg)

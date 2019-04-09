@@ -21,11 +21,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ibuildthecloud/kvsql/clientv3/driver"
-	"github.com/ibuildthecloud/kvsql/clientv3/driver/sqlite"
 	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/docker/docker/pkg/locker"
+	"github.com/ibuildthecloud/kvsql/clientv3/driver"
+	"github.com/ibuildthecloud/kvsql/clientv3/driver/dqlite"
+	"github.com/ibuildthecloud/kvsql/clientv3/driver/sqlite"
 	"golang.org/x/net/context"
 )
 
@@ -38,9 +39,9 @@ type (
 )
 
 var (
-	connections map[string]*kv
-	connectionsCtx context.Context
-	CloseDB func()
+	connections     map[string]*kv
+	connectionsCtx  context.Context
+	CloseDB         func()
 	connectionsLock sync.Mutex
 )
 
@@ -101,14 +102,19 @@ func newKV(cfg Config) (*kv, error) {
 	}
 
 	var (
-		db *sql.DB
+		db     *sql.DB
 		driver *driver.Generic
-		err error
+		err    error
 	)
 
 	switch parts[0] {
 	case "sqlite":
 		if db, err = sqlite.Open(parts[1]); err != nil {
+			return nil, err
+		}
+		driver = sqlite.NewSQLite()
+	case "dqlite":
+		if db, err = dqlite.Open(parts[1]); err != nil {
 			return nil, err
 		}
 		driver = sqlite.NewSQLite()
@@ -120,11 +126,11 @@ func newKV(cfg Config) (*kv, error) {
 	}
 
 	kv := &kv{
-		d:driver,
+		d: driver,
 	}
 	connections[key] = kv
 
-	return  kv, nil
+	return kv, nil
 }
 
 func (k *kv) Put(ctx context.Context, key, val string, opts ...OpOption) (*PutResponse, error) {
