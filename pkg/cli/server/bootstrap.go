@@ -1,8 +1,10 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -13,17 +15,15 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-const port = 6444
-
 // Bootstrap a new node.
 func Bootstrap(app *cli.Context) error {
 	id := app.Args().Get(0)
 	if id == "" {
 		return fmt.Errorf("No ID given")
 	}
-	ip := app.Args().Get(1)
-	if ip == "" {
-		return fmt.Errorf("No IP given")
+	address := app.Args().Get(1)
+	if address == "" {
+		return fmt.Errorf("No address given")
 	}
 	serverID, err := strconv.Atoi(id)
 	if err != nil {
@@ -31,17 +31,22 @@ func Bootstrap(app *cli.Context) error {
 	}
 	info := dqlite.ServerInfo{
 		ID:      uint64(serverID),
-		Address: fmt.Sprintf("%s:%d", ip, port),
+		Address: address,
 	}
-	server, err := dqlite.NewServer(info, cmds.BootstrapConfig.DataDir)
+	dir := filepath.Join(cmds.BootstrapConfig.DataDir, "server", "db")
+	err = os.MkdirAll(dir, 0700)
+	if err != nil {
+		return err
+	}
+	server, err := dqlite.NewServer(info, dir)
 	if err != nil {
 		return err
 	}
 	infos := make([]dqlite.ServerInfo, len(cmds.BootstrapConfig.Members))
 	for i, member := range cmds.BootstrapConfig.Members {
-		parts := strings.Split(member, ":")
+		parts := strings.Split(member, ",")
 		if len(parts) != 2 {
-			return fmt.Errorf("Bad member format, should be <ID>:<IP>")
+			return fmt.Errorf("Bad member format, should be <ID>,<IP>")
 		}
 		memberID, err := strconv.Atoi(parts[0])
 		if err != nil {
@@ -54,11 +59,19 @@ func Bootstrap(app *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	bytes, err := yaml.Marshal(&info)
+	data, err := yaml.Marshal(&info)
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(filepath.Join(cmds.BootstrapConfig.DataDir, "info"), bytes, 0644)
+	err = ioutil.WriteFile(filepath.Join(dir, "info"), data, 0644)
+	if err != nil {
+		return err
+	}
+	store, err := dqlite.DefaultServerStore(filepath.Join(dir, "store"))
+	if err != nil {
+		return err
+	}
+	err = store.Set(context.Background(), infos)
 	if err != nil {
 		return err
 	}
