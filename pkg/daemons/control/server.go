@@ -86,10 +86,10 @@ func Server(ctx context.Context, cfg *config.Control) error {
 	runtime.Authenticator = auth
 
 	if !cfg.NoScheduler {
-		scheduler(cfg, runtime)
+		//scheduler(cfg, runtime)
 	}
 
-	controllerManager(cfg, runtime)
+	//controllerManager(cfg, runtime)
 
 	return nil
 }
@@ -101,7 +101,7 @@ func controllerManager(cfg *config.Control, runtime *config.ControlRuntime) {
 		"--allocate-node-cidrs",
 		"--cluster-cidr", cfg.ClusterIPRange.String(),
 		"--root-ca-file", runtime.TokenCA,
-		"--port", "10252",
+		"--port", fmt.Sprintf("%d", cfg.ListenPort+50),
 		"--bind-address", "127.0.0.1",
 		"--secure-port", "0",
 	}
@@ -121,7 +121,7 @@ func controllerManager(cfg *config.Control, runtime *config.ControlRuntime) {
 func scheduler(cfg *config.Control, runtime *config.ControlRuntime) {
 	args := []string{
 		"--kubeconfig", runtime.KubeConfigSystem,
-		"--port", "10251",
+		"--port", fmt.Sprintf("%d", cfg.ListenPort+20),
 		"--bind-address", "127.0.0.1",
 		"--secure-port", "0",
 	}

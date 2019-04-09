@@ -75,6 +75,8 @@ func run(app *cli.Context, cfg *cmds.Server) error {
 	serverConfig.ControlConfig.DataDir = cfg.DataDir
 	serverConfig.ControlConfig.KubeConfigOutput = cfg.KubeConfigOutput
 	serverConfig.ControlConfig.KubeConfigMode = cfg.KubeConfigMode
+	serverConfig.ControlConfig.AdvertisePort = cfg.HTTPSPort + 10
+	serverConfig.ControlConfig.ListenPort = cfg.HTTPSPort + 10
 	serverConfig.TLSConfig.HTTPSPort = cfg.HTTPSPort
 	serverConfig.TLSConfig.HTTPPort = cfg.HTTPPort
 	serverConfig.TLSConfig.KnownIPs = knownIPs(cfg.KnownIPs)
